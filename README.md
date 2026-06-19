@@ -1,5 +1,8 @@
 # linkedin-share-resolver
 
+[![CI](https://github.com/hari-GTM/linkedin-share-resolver/actions/workflows/ci.yml/badge.svg)](https://github.com/hari-GTM/linkedin-share-resolver/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A small API service that resolves a LinkedIn **Share** post URL to its public
 **Activity** permalink, so downstream tools (e.g. [Clay](https://clay.com)) that
 only accept `activity` / `ugcPost` URLs can extract post reactions.
