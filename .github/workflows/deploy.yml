@@ -1,0 +1,61 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+# Keyless auth to Google Cloud via OIDC (Workload Identity Federation).
+permissions:
+  contents: read
+  id-token: write
+
+# Avoid overlapping deploys; cancel an in-progress one if a newer push lands.
+concurrency:
+  group: deploy-cloud-run
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # --- Safety gate: only deploy if the build is green ---
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Type-check
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+
+      # --- Authenticate to Google Cloud (no stored keys) ---
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/385898561397/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@leadle-linkedin-resolver.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # --- Build from source and deploy. Unspecified settings are retained,
+      #     but we re-assert the full config so it stays defined in code. ---
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy linkedin-share-resolver \
+            --source . \
+            --project leadle-linkedin-resolver \
+            --region us-central1 \
+            --memory 2Gi --cpu 1 \
+            --concurrency 1 --timeout 90 \
+            --min-instances 0 --max-instances 2 \
+            --allow-unauthenticated \
+            --set-env-vars PAGE_TIMEOUT_MS=45000,ENABLE_DEBUG_ARTIFACTS=false,LOG_LEVEL=info \
+            --set-secrets RESOLVER_API_KEY=RESOLVER_API_KEY:latest,LINKEDIN_COOKIES=LINKEDIN_COOKIES:latest \
+            --quiet
