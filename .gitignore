@@ -1,0 +1,20 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.env.*.local
+
+# Debug artifacts (screenshots / HTML dumps) — may contain page content
+debug-artifacts/
+tmp/
+
+# Captured LinkedIn session cookies — NEVER commit
+cookies.json
+*.cookies.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
